@@ -1,0 +1,96 @@
+---
+title: "Datatable Demo"
+author: "Clarissa Boyajian"
+date: "4/27/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(data.table)
+library(tictoc)
+library(dtplyr)
+```
+
+
+```{r}
+tic()
+ftm_trees_df <- read_csv("FTM_trees.csv")
+toc()
+```
+
+```{r}
+tic()
+ftm_trees_dt <- data.table::fread("FTM_trees.csv")
+toc()
+```
+
+
+```{r}
+class(ftm_trees_df)
+class(ftm_trees_dt)
+```
+
+
+Wrangle those data objects to only include trees of species "ponderosa"
+
+```{r}
+tic()
+ponderosa <- ftm_trees_df %>% 
+  filter(Species_name == "ponderosa")
+toc()
+```
+
+```{r}
+tic()
+ponderosa_dt <- ftm_trees_dt[Species_name == "ponderosa"]
+toc()
+```
+
+
+Create objet that can be used with dtplyr (aka use dplyr syntax but it runs data.table code = faster)
+
+```{r}
+lazy_trees <- lazy_dt(ftm_trees_df)
+class(lazy_trees)
+```
+
+
+```{r}
+lazy_trees %>% 
+  filter(Species_name %in% c("ponderosa", "jeffreyi") & HT_m > 21) %>% 
+  select(Genus, Species_name, DBH_cm, HT_m) %>% 
+  group_by(Species_name) %>% 
+  summarise(mean_height = mean(HT_m, na.rm = TRUE))
+```
+
+```{r}
+ftm_trees_dt[Species_name %in% c("ponderosa", "jeffreyi") & HT_m > 
+    21, .(Genus, Species_name, DBH_cm, HT_m)][, .(mean_height = mean(HT_m, 
+    na.rm = TRUE)), keyby = .(Species_name)]
+```
+
+
+```{r}
+lazy_trees %>% 
+  filter(Species_name %in% c("ponderosa", "jeffreyi") & HT_m > 21) %>% 
+  select(Genus, Species_name, DBH_cm, HT_m) %>% 
+  group_by(Species_name) %>% 
+  summarise(mean_height = mean(HT_m, na.rm = TRUE)) %>% 
+  as.tibble() # to have it output a tibble for use later on
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
